@@ -443,7 +443,7 @@ def train_network(model, loss_fn, task, train_dataloader, val_dataloader=None, t
     if task not in TASK.keys():
         raise ValueError(f'task {task} is not supported, task must be one of {TASK}')
 
-    task = TASK[task]
+    run = TASK[task]
 
     model.to(device)
     for epoch in range(epochs):
@@ -512,6 +512,7 @@ def train_network(model, loss_fn, task, train_dataloader, val_dataloader=None, t
     end = time.time()
     print(f'\n训练结束，共训练 {epochs} 轮，耗时 {end-start}')
     return results, test_results, best_model_state
+
 
 
 
