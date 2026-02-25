@@ -135,6 +135,7 @@ mytoolkit/
 └── utils.py         # 随机种子固定、加载模型权重、适配器等辅助工具
 
 🎯 支持的任务与评估指标
+
 任务类型           支持指标
 图像分类           Accuracy, Precision, Recall, F1
 
