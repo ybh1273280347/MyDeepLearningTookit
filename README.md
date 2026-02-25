@@ -20,14 +20,16 @@ pip install -e git+https://github.com/ybh1273280347/MyDeepLearningToolkit.git#eg
 📖 快速开始
 
 下载数据
+```python
 
 from mytoolkit import download_and_extract
 
 url = 'https://github.com/ultralytics/assets/releases/download/v0.0.0/coco128.zip'
 download_and_extract(url, './dataset')
-
+```
 定义数据增强（以目标检测为例）
 
+```python
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
@@ -45,11 +47,11 @@ val_transform = A.Compose([
     A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
     ToTensorV2(),
 ], bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
-
+```
 分割数据集
 
 假设 dataset 是一个已加载的 Dataset 对象：
-
+```python
 from mytoolkit import split_dataset
 
 train_dataset, val_dataset, _ = split_dataset(
@@ -57,9 +59,9 @@ train_dataset, val_dataset, _ = split_dataset(
     train_transform=train_transform,
     val_transform=val_transform
 )
-
+```
 创建 DataLoader
-
+```python
 import torch
 from mytoolkit import get_dataloaders
 
@@ -75,13 +77,13 @@ train_loader, val_loader, _ = get_dataloaders(
     num_workers=4,
     collate_fn=collate_fn
 )
-
+```
 训练模型
-
+```python
 from mytoolkit import train_network, get_detection_metrics
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
 
-示例：使用 torchvision 的 Faster R-CNN
+# 示例：使用 torchvision 的 Faster R-CNN
 model = fasterrcnn_resnet50_fpn(num_classes=81)
 
 results_df, _, _ = train_network(
@@ -94,21 +96,21 @@ results_df, _, _ = train_network(
     epochs=20,
     to_df=True
 )
-
+```
 💡 注：本工具箱聚焦训练流程抽象，模型与评估指标可由用户灵活提供，便于适配不同研究需求。
 
 可视化结果
-
+```python
 from mytoolkit import visualize_results
 
 metrics = get_detection_metrics(for_visualization=True)
 visualize_results(results_df, metrics, mode='epoch')
-
+```
 快速调试（10~30秒验证整个 pipeline）
-
+```python
 from mytoolkit import quick_debug
 
-只需提供 dataset 和 model，其余自动配置为最小规模
+# 只需提供 dataset 和 model，其余自动配置为最小规模
 results = quick_debug(
     dataset=dataset,
     model=model,
@@ -116,7 +118,7 @@ results = quick_debug(
     collate_fn=collate_fn
     # 注意：可不指定 epochs！内部已限制 ≤3，确保快速完成
 )
-
+```
 💡 默认使用 1 个训练 batch + 1 个验证 batch + ≤3 轮训练，通常在 30 秒内完成，适用于：  
 验证数据加载是否正常  
 检查模型前向/反向是否出错  
