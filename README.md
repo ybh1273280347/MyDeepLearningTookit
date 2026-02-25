@@ -126,7 +126,7 @@ results = quick_debug(
 快速测试新任务适配效果
 
 📁 项目结构
-
+```markdown
 mytoolkit/
 ├── data.py          # 数据集下载/解压、通用 Dataset 封装、DataLoader 构建，及其他数据处理函数
 ├── training.py      # 统一训练循环，通过 task 分发逻辑支持多任务
@@ -144,7 +144,7 @@ mytoolkit/
 语义/实例分割      mIoU, Pixel Accuracy 等
 
 ......
-
+```
 📝 致谢
 
 本工具箱源于我在深度学习自学与项目实践中的工程需求，旨在减少重复性代码编写，提升实验迭代效率。目前仍在持续完善中，如有建议或发现 bug，欢迎提出！
