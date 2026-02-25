@@ -248,30 +248,32 @@ def inspect_training_setup(model, optimizer=None, scheduler=None,
     print("\n检查完成")
 
 
-def quick_debug(dataset, batch_size=2, num_train=2, num_val=1, collate_fn=None, **kwargs):
+def quick_debug(dataset, batch_size=1, num_train=1, num_val=1, collate_fn=None, **kwargs):
     """
     快速调试训练流程
 
     :param dataset: 完整数据集
-    :param batch_size: 批次大小，默认2
-    :param num_train: 训练集 batch 数量，默认2 → 总训练样本 = batch_size * num_train
-    :param num_val: 验证集 batch 数量，默认1 → 总验证样本 = batch_size * num_val
+    :param batch_size: 批次大小，默认1
+    :param num_train: 训练 batch 数，默认1 → 总训练样本 = batch_size * num_train
+    :param num_val: 验证 batch 数，默认1
     :param collate_fn: DataLoader的collate函数
-    :param kwargs: 传给 train_network 的所有参数(model, task, loss_fn, score_funcs, epochs)
+    :param kwargs: 传给 train_network 的参数（model, task, loss_fn, score_funcs 等）
     :return: train_network 的返回结果
     """
-    # 随机采样，保证每次 debug 的数据不同
-    total_samples = batch_size * (num_train + num_val)
-    indices = random.sample(range(len(dataset)), k=total_samples)
+    # 强制限制 epochs ≤ 3，防止调试时间过长
+    kwargs['epochs'] = min(3, kwargs.get('epochs', 1))
 
-    # 按 batch 数量切分
-    train_indices = indices[: batch_size * num_train]
+    total_samples = batch_size * (num_train + num_val)
+    if total_samples > len(dataset):
+        raise ValueError(f"数据集太小 ({len(dataset)})，无法采样 {total_samples} 个样本用于调试")
+
+    indices = random.sample(range(len(dataset)), k=total_samples)
+    train_indices = indices[:batch_size * num_train]
     val_indices = indices[batch_size * num_train:]
 
     train_debug_dataset = Subset(dataset, train_indices)
     val_debug_dataset = Subset(dataset, val_indices)
 
-    # 3. 创建 DataLoader
     train_loader, val_loader, _ = get_dataloaders(
         batch_size=batch_size,
         train_dataset=train_debug_dataset,
@@ -279,8 +281,8 @@ def quick_debug(dataset, batch_size=2, num_train=2, num_val=1, collate_fn=None, 
         collate_fn=collate_fn
     )
 
-    # 4. 快速训练
-    print('Debug开始: ')
+    print(f'Debug 模式启动 | 样本数: {len(train_debug_dataset)} train + {len(val_debug_dataset)} val | epochs = {kwargs["epochs"]}')
+    
     results, _, _ = train_network(
         train_dataloader=train_loader,
         val_dataloader=val_loader,
@@ -288,6 +290,5 @@ def quick_debug(dataset, batch_size=2, num_train=2, num_val=1, collate_fn=None, 
         **kwargs
     )
 
-    print('\n Debug完成，results如下: ')
-    print(results)
+    print("\n Debug 完成！Pipeline 验证通过。")
     return results
