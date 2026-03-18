@@ -1,13 +1,7 @@
 # training.py
 import copy
-import torch
-import torch.nn as nn
-import numpy as np
-import pandas as pd
 from torch.optim.lr_scheduler import *
-from tqdm import tqdm
 import time
-from collections import defaultdict
 from torchmetrics.detection import MeanAveragePrecision
 from torchmetrics.segmentation import MeanIoU
 from metrics import *
@@ -41,14 +35,13 @@ def move_to(obj, device):
         return obj
 
 
-# noinspection PyUnboundLocalVariable
 def run_epoch(model, optimizer, dataloader, loss_fn, device, results,
-              score_funcs, task, prefix="", desc=None, **kwargs):
+              score_funcs, task, prefix="", desc=None, show_epoch_result=True, **kwargs):
     """
      运行一个训练/验证/测试轮次
 
      :param model: PyTorch模型
-     :param optimizer: 优化器
+     :param  optimizer: 优化器
      :param dataloader: 数据迭代器，提供(inputs, labels)批次
      :param loss_fn: 损失函数，接受(y_pred, y_true)并返回loss
      :param device: 训练设备（'cuda'或'cpu'）
@@ -123,12 +116,15 @@ def run_epoch(model, optimizer, dataloader, loss_fn, device, results,
             results[f'{prefix} {name}'].append(score_func(y_true, y_pred_prob))
         else:
             results[f'{prefix} {name}'].append(score_func(y_true, y_pred_class))
-
+    
+    if show_epoch_result:
+        print(results)
+    
     return end - start
 
 
 def run_detection_epoch(model, optimizer, dataloader, loss_fn, device, results,
-                        score_funcs, task, prefix="", desc=None, **kwargs):
+                        score_funcs, task, prefix="", desc=None, show_epoch_result=True,**kwargs):
     """
     目标检测专用训练轮次
     """
@@ -177,12 +173,15 @@ def run_detection_epoch(model, optimizer, dataloader, loss_fn, device, results,
         for name in score_funcs:
             if name in eval_results:
                 results[f'{prefix} {name}'].append(eval_results[name].item())
+                
+    if show_epoch_result:
+        print(results)
 
     return end - start
 
 
 def run_segmentation_epoch(model, optimizer, dataloader, loss_fn, device, results,
-                            score_funcs, task='segmentation', prefix="", desc=None, **kwargs):
+                            score_funcs, task='segmentation', prefix="", desc=None, show_epoch_result=True,**kwargs):
     """
     分割任务专用训练轮次（支持语义分割和实例分割）
 
@@ -270,12 +269,15 @@ def run_segmentation_epoch(model, optimizer, dataloader, loss_fn, device, result
             for name in score_funcs:
                 if name in eval_results and name != 'pixel acc':
                     results[f'{prefix} {name}'].append(eval_results[name].item())
+                    
+    if show_epoch_result:
+        print(results)
 
     return end - start
 
 
 def run_self_supervised_epoch(model, optimizer, dataloader, loss_fn, device, results,
-                              score_funcs, task='self_supervised', prefix="", desc=None, **kwargs):
+                              score_funcs, task='self_supervised', prefix="", desc=None, show_epoch_result=True,**kwargs):
     """
     自监督学习统一训练函数
 
@@ -357,6 +359,9 @@ def run_self_supervised_epoch(model, optimizer, dataloader, loss_fn, device, res
 
     if running_loss:
         results[f'{prefix} loss'].append(np.mean(running_loss))
+        
+    if show_epoch_result:
+        print(results)
 
     return end - start
 
@@ -371,7 +376,7 @@ TASK = {
 def train_network(model, loss_fn, task, train_dataloader, val_dataloader=None, test_dataloader=None,
                       score_funcs=None,
                       epochs=50, device="cuda" if torch.cuda.is_available() else 'cpu', checkpoint_file=None,
-                      lr_schedule=None, optimizer=None, to_df=True, **kwargs
+                      lr_schedule=None, optimizer=None, to_df=True, show_epoch_result=True,**kwargs
                       ):
     """
     完整的神经网络训练函数
@@ -453,7 +458,7 @@ def train_network(model, loss_fn, task, train_dataloader, val_dataloader=None, t
 
         # 训练时间
         total_train_time += run(model, optimizer, train_dataloader, loss_fn, device, results,
-                                score_funcs, task, prefix="train", desc='Training', **kwargs)
+                                score_funcs, task, prefix="train", desc='Training', show_epoch_result=show_epoch_result, **kwargs)
 
         results['epoch'].append(epoch)
         results['total time'].append(total_train_time)
@@ -463,7 +468,7 @@ def train_network(model, loss_fn, task, train_dataloader, val_dataloader=None, t
 
             with torch.no_grad():
                 run(model, optimizer, val_dataloader, loss_fn, device, results,
-                          score_funcs, task, prefix="val", desc='Validation', **kwargs)
+                          score_funcs, task, prefix="val", desc='Validation', show_epoch_result=True,**kwargs)
 
             if results['val loss'] and results['val loss'][-1] < best_val_loss:
                 best_val_loss = results['val loss'][-1]
@@ -500,7 +505,7 @@ def train_network(model, loss_fn, task, train_dataloader, val_dataloader=None, t
 
         with torch.no_grad():
             run(best_model, optimizer, test_dataloader, loss_fn, device, test_results,
-                score_funcs, task, prefix="test", desc='Testing', **kwargs)
+                score_funcs, task, prefix="test", desc='Testing', show_epoch_result=show_epoch_result,**kwargs)
 
         test_results = {k: v[0] for k, v in test_results.items() if len(v) > 0}
 
@@ -512,7 +517,6 @@ def train_network(model, loss_fn, task, train_dataloader, val_dataloader=None, t
     end = time.time()
     print(f'\n训练结束，共训练 {epochs} 轮，耗时 {end-start}')
     return results, test_results, best_model_state
-
 
 
 
