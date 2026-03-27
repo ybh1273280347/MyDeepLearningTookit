@@ -10,14 +10,9 @@
 📊 训练进度条 + 指标记录 + 可视化一站式集成  
 🚀 快速调试模式：10~30 秒验证整个训练 pipeline 是否跑通
 
-🛠️ 安装
-
-pip install git+https://github.com/ybh1273280347/MyDeepLearningToolkit.git
-
-支持 editable 安装（便于本地开发）：
-pip install -e git+https://github.com/ybh1273280347/MyDeepLearningToolkit.git#egg=mytoolkit
 
 📖 快速开始
+git clone https://github.com/ybh1273280347/MyDeepLearningToolkit.git
 
 下载数据
 ```python
